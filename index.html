@@ -53,6 +53,7 @@ header p{margin:6px 0 0;color:var(--muted);max-width:62ch}
 .ph .num{position:absolute;top:6px;left:6px;background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:12px;border-radius:20px;padding:1px 8px}
 .ph .tag{position:absolute;bottom:6px;left:6px;background:#000a;color:#fff;font-size:11px;border-radius:6px;padding:1px 6px}
 .ph .tools{display:flex;gap:4px;padding:6px}
+.ph .tag.low{bottom:auto;top:6px;left:auto;right:6px;background:#C2410C}
 .ph .tools button{flex:1}
 .ph input{border:0;border-top:1px solid var(--line);border-radius:0;font-size:13px}
 label.f{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600;min-width:0}
@@ -136,7 +137,6 @@ h3{margin:0;font-size:15px}
 <div class="wrap">
   <header>
     <h1>Xưởng Video <span>Bé Xinh</span></h1>
-    <p>Ghép clip và ảnh bé mặc đồ với ảnh sản phẩm thành video dọc 9:16 để đăng Reels và TikTok. Có chữ, giá, lời kêu gọi mua hàng và nhạc nền. Hoàn toàn miễn phí.</p>
     <div class="owner">Được tạo bởi <b>Ngô Thị Hồng Hạnh</b></div>
     <div class="privacy">Ảnh và clip chỉ nằm trên máy của bạn, không tải lên đâu cả</div>
   </header>
@@ -254,6 +254,14 @@ h3{margin:0;font-size:15px}
           <input type="file" id="inMusic" accept="audio/*">
         </label>
         <p class="hint" id="musicName">Chưa chọn nhạc. Bạn cũng có thể để trống rồi chọn nhạc ngay trong TikTok/Reels khi đăng.</p>
+        <div class="f" style="font-size:13px;font-weight:600">Kiểu chữ trên video</div>
+        <div class="chips" id="capChips">
+          <button class="chip" data-v="outline" aria-pressed="true">Chữ trắng viền đen</button>
+          <button class="chip" data-v="box" aria-pressed="false">Nền màu</button>
+          <button class="chip" data-v="white" aria-pressed="false">Nền trắng</button>
+        </div>
+        <label class="toggle"><input type="checkbox" id="fBeauty" checked>
+          <span><b>Làm đẹp màu</b>: tăng nhẹ độ tươi và độ tương phản cho ảnh, clip. Nếu máy yếu làm xem trước bị giật, công cụ sẽ tự tắt.</span></label>
         <label class="toggle"><input type="checkbox" id="fAi">
           <span>Hiện dòng chữ "Hình ảnh có sử dụng AI" trên video. Bật khi ảnh được ghép bằng AI. Khi đăng vẫn nên bật thêm nhãn nội dung AI của TikTok/Facebook.</span></label>
       </section>
@@ -266,6 +274,7 @@ h3{margin:0;font-size:15px}
         <input type="range" id="scrub" min="0" max="1000" value="0" aria-label="Tua video">
         <span class="time" id="time">0.0 / 0.0s</span>
       </div>
+      <label class="toggle" style="font-size:13px"><input type="checkbox" id="fSafe"><span>Hiện vùng bị nút và chữ TikTok, Facebook che (chỉ để xem, không có trong video)</span></label>
       <button class="btn primary" id="btnExport">Xuất video</button>
       <div class="bar" id="bar" hidden><i></i></div>
       <p class="status" id="status">Video xuất ra có độ phân giải 1080×1920. Trong lúc xuất, đừng chuyển sang tab khác.</p>
@@ -305,6 +314,7 @@ h3{margin:0;font-size:15px}
     <section class="sec">
       <h2>Lưu ý khi đăng bán hàng</h2>
       <ul>
+        <li><b>Video nét trên TikTok, Facebook:</b> quay 1080p hoặc 4K, 30 khung/giây, lau sạch camera, quay cạnh cửa sổ. Chuyển clip bằng cáp hoặc Google Drive, không gửi qua Zalo, Messenger vì sẽ bị nén mờ. Khi đăng TikTok, mở "Cài đặt khác" và bật "Cho phép tải lên chất lượng cao". Trên Facebook, vào Cài đặt → File phương tiện và bật tải video HD. Tên mục có thể khác tùy phiên bản ứng dụng.</li>
         <li><b>Ảnh thật bán tốt nhất.</b> Chụp bé mặc đồ thật cạnh cửa sổ là cách miễn phí, đúng sản phẩm và được tin tưởng hơn ảnh AI.</li>
         <li><b>Ảnh AI phải gắn nhãn.</b> TikTok và Facebook yêu cầu bật nhãn "nội dung do AI tạo". Kiểm tra kỹ xem AI có vẽ sai màu hay họa tiết không, kẻo bị khách phản ánh.</li>
         <li><b>Ảnh trẻ em khác</b> chỉ dùng khi có quyền: ảnh shop gửi, ảnh mua bản quyền, hoặc được bố mẹ bé đồng ý.</li>
@@ -329,7 +339,8 @@ const THEMES = [
   {name:'Tím', accent:'#7A5AE0', ink:'#FFFFFF'},
   {name:'Đen', accent:'#1E1B26', ink:'#FFFFFF'},
 ];
-const S = { photos:[], product:null, template:'khoe', transition:'fade', theme:0, secs:2.5, ai:false, music:null };
+const S = { photos:[], product:null, template:'khoe', transition:'fade', theme:0, secs:2.5, ai:false, music:null, capStyle:'outline', beauty:true, safe:false };
+let exporting = false;
 let uid = 0;
 
 /* ---------- Ảnh & clip ---------- */
@@ -393,7 +404,8 @@ async function addPhotos(files){
       } else { const {img} = await loadFile(f); S.photos.push({id:++uid, img, blur:makeBlur(img), caption:S.scriptCaps?.[S.photos.length] || '', sample:false, side:'shop'}); }
     } catch(e){ setStatus(e.message); continue; }
   }
-  setStatus('Đã thêm. Bấm ▶ để xem thử.');
+  const low = S.photos.filter(p => !p.sample && Math.min(dimW(p.img),dimH(p.img)) < 720).length;
+  setStatus(low ? `Đã thêm. Có ${low} ảnh/clip độ nét thấp (dưới 720p) nên video sẽ hơi mờ. Nên dùng clip gốc quay từ điện thoại, không lấy qua Zalo hay Messenger.` : 'Đã thêm. Bấm ▶ để xem thử.');
   renderPhotoList(); refresh();
 }
 function thumbURL(p){
@@ -407,7 +419,7 @@ function renderPhotoList(){
   const box = $('photoList'); box.innerHTML = '';
   S.photos.forEach((p, i) => {
     const el = document.createElement('div'); el.className = 'ph';
-    el.innerHTML = `<div class="thumb"><span class="num">${i+1}</span>${p.sample?'<span class="tag">Ảnh mẫu</span>':''}${p.kind==='video'?'<span class="tag">▶ Clip '+p.dur.toFixed(1)+'s</span>':''}</div>
+    el.innerHTML = `<div class="thumb"><span class="num">${i+1}</span>${p.sample?'<span class="tag">Ảnh mẫu</span>':''}${p.kind==='video'?'<span class="tag">▶ Clip '+p.dur.toFixed(1)+'s</span>':''}${!p.sample && Math.min(dimW(p.img),dimH(p.img)) < 720 ? '<span class="tag low">Độ nét thấp ('+Math.min(dimW(p.img),dimH(p.img))+'p)</span>':''}</div>
       <input type="text" id="cap-${p.id}" placeholder="Chữ trên ảnh/clip. Nhiều câu: cách nhau dấu |">
       ${S.template==='vs'?`<button class="side ${p.side}" data-a="side">${esc(p.side==='shop'?(val('fLabelA')||'Nhóm 1'):(val('fLabelB')||'Nhóm 2'))} · bấm để đổi</button>`:''}
       <div class="tools"><button class="btn sm" data-a="up" aria-label="Đưa lên trước">←</button><button class="btn sm" data-a="down" aria-label="Đưa ra sau">→</button><button class="btn sm" data-a="del">Xóa</button></div>`;
@@ -469,6 +481,9 @@ THEMES.forEach((t, i) => {
 });
 $('fSecs').addEventListener('change', e => { S.secs = +e.target.value; refresh(); });
 $('fAi').addEventListener('change', e => { S.ai = e.target.checked; refresh(); });
+$('fBeauty').addEventListener('change', e => { S.beauty = e.target.checked; refresh(); });
+$('fSafe').addEventListener('change', e => { S.safe = e.target.checked; refresh(); });
+chipGroup('capChips','capStyle');
 ['fName','fPrice','fOld','fHook','fCta','fShop'].forEach(id => $(id).addEventListener('input', refresh));
 $('inMusic').addEventListener('change', e => {
   const f = e.target.files[0]; if(!f) return;
@@ -523,16 +538,20 @@ function drawImg(src, k, panDir){
   ctx.save();
   if(ar < 0.72){ // ảnh dọc: lấp đầy khung
     const r = Math.max(W/iw, H/ih)*s; const w = iw*r, h = ih*r;
+    if(S.beauty) ctx.filter = BEAUTY;
     ctx.drawImage(img, (W-w)/2 + panDir*30*k, (H-h)/2 - 20*k, w, h);
   } else { // ảnh ngang/vuông: nền mờ + ảnh vừa khung
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(src.blur, -40, -40, W+80, H+80);
     const r = Math.min(W/iw, (H*0.78)/ih)*s; const w = iw*r, h = ih*r;
     ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 40;
+    if(S.beauty) ctx.filter = BEAUTY;
     ctx.drawImage(img, (W-w)/2 + panDir*20*k, (H-h)/2 - 40, w, h);
   }
   ctx.restore();
 }
+const BEAUTY = 'contrast(1.06) saturate(1.16) brightness(1.03)';
+function vignette(){ const g = ctx.createRadialGradient(W/2, H*0.45, H*0.35, W/2, H*0.45, H*0.78); g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,.22)'); ctx.fillStyle = g; ctx.fillRect(0,0,W,H); }
 function shade(y0, y1, a){ const g = ctx.createLinearGradient(0,y0,0,y1); g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,`rgba(0,0,0,${a})`); ctx.fillStyle = g; ctx.fillRect(0,Math.min(y0,y1),W,Math.abs(y1-y0)); }
 function pill(text, cx, y, font, bg, fg, padX=36, h=96){
   ctx.font = font; const w = Math.min(ctx.measureText(text).width + padX*2, W-80);
@@ -541,15 +560,25 @@ function pill(text, cx, y, font, bg, fg, padX=36, h=96){
 }
 function caption(text, theme){
   if(!text) return;
-  shade(H*0.62, H, .55);
-  ctx.font = '800 72px "Be Vietnam Pro", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-  const lines = wrap(text, W-160).slice(0,3); let y = H - 300 - (lines.length-1)*86;
-  ctx.lineJoin = 'round'; ctx.lineWidth = 12; ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.fillStyle = '#fff';
-  lines.forEach(l => { ctx.strokeText(l, W/2, y); ctx.fillText(l, W/2, y); y += 86; });
+  // giữ chữ trong vùng an toàn: trên phần mô tả và tránh cột nút bên phải của TikTok/Reels
+  ctx.font = '800 70px "Be Vietnam Pro", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  const cx = W/2 - 40, maxW = W - 300, lh = S.capStyle === 'outline' ? 86 : 100;
+  const lines = wrap(text, maxW).slice(0,3); let y = H - 560 - (lines.length-1)*lh;
+  if(S.capStyle === 'outline'){
+    shade(H*0.45, H*0.85, .5);
+    ctx.lineJoin = 'round'; ctx.lineWidth = 13; ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.fillStyle = '#fff';
+    lines.forEach(l => { ctx.strokeText(l, cx, y); ctx.fillText(l, cx, y); y += lh; });
+  } else {
+    const bg = S.capStyle === 'box' ? (theme.accent === '#1E1B26' ? '#1F6FE5' : theme.accent) : '#FFFFFF';
+    const fg = S.capStyle === 'box' ? (theme.accent === '#1E1B26' ? '#FFFFFF' : theme.ink) : '#1A1726';
+    lines.forEach(l => { const w = ctx.measureText(l).width + 48;
+      ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 18; rr(cx - w/2, y - 70, w, 92, 20); ctx.fillStyle = bg; ctx.fill(); ctx.restore();
+      ctx.fillStyle = fg; ctx.fillText(l, cx, y); y += lh; });
+  }
 }
 function productInset(theme, k){
   if(!S.product) return;
-  const sz = 330, x = W - sz - 56, y = 200 + Math.sin(k*Math.PI)*6;
+  const sz = 330, x = W - sz - 56, y = 240 + Math.sin(k*Math.PI)*6;
   ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.3)'; ctx.shadowBlur = 30; rr(x, y, sz, sz, 28); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore();
   ctx.save(); rr(x+14, y+14, sz-28, sz-28, 18); ctx.clip();
   const im = S.product.img, r = Math.min((sz-28)/im.width, (sz-28)/im.height);
@@ -574,19 +603,20 @@ function drawSeg(seg, lt, activeSet){
     const p = S.photos[seg.idx]; if(!p) return;
     if(p.el) syncVideo(p, lt, activeSet);
     drawImg(p, p.el ? 0.15 : k, seg.idx%2 ? -1 : 1);
+    vignette();
     const vs = S.template === 'vs';
     if(vs && lt < 0.22){ const pz = 1 + 0.07*(1 - lt/0.22); ctx.save(); ctx.translate(W/2,H/2); ctx.scale(pz,pz); ctx.translate(-W/2,-H/2); drawImg(p, p.el ? 0.15 : k, seg.idx%2 ? -1 : 1); ctx.restore(); }
     const cap = p.caption || (S.template === 'khoe' && seg.idx === 0 ? val('fName') : '') || (vs && seg.nShop === 0 && val('fLabelA') === 'ẢNH SHOP' ? 'Xinh vậy, chắc ảnh mạng thôi?' : '');
     if(vs){ const real = p.side === 'real';
-      const lab = real ? val('fLabelB') : val('fLabelA'); if(lab) pill(lab, W/2, 160, '800 62px "Be Vietnam Pro", sans-serif', real ? '#EB3B3B' : '#FFFFFF', real ? '#FFFFFF' : '#262238', 44, 108); }
+      const lab = real ? val('fLabelB') : val('fLabelA'); if(lab) pill(lab, W/2, 220, '800 62px "Be Vietnam Pro", sans-serif', real ? '#EB3B3B' : '#FFFFFF', real ? '#FFFFFF' : '#262238', 44, 108); }
     if(S.template === 'set'){
-      pill((val('fSetLabel') || 'SET') + ' ' + (seg.idx+1), 230, 180, '800 64px "Baloo 2", sans-serif', theme.accent, theme.ink, 44, 110);
+      pill((val('fSetLabel') || 'SET') + ' ' + (seg.idx+1), 230, 220, '800 64px "Baloo 2", sans-serif', theme.accent, theme.ink, 44, 110);
     }
     if(S.template === 'combo') productInset(theme, k);
     const parts = cap.split(/\s*\|\s*|\s+\/\s+/).filter(Boolean);
     caption(parts.length > 1 ? parts[Math.min(parts.length-1, Math.floor(k*parts.length))] : cap, theme);
     if(S.template !== 'set' && !vs && val('fShop')){ ctx.font = '700 40px "Be Vietnam Pro", sans-serif'; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
-      ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=12; ctx.fillText(val('fShop'), 60, H-120); ctx.shadowBlur=0; }
+      ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.shadowColor='rgba(0,0,0,.55)'; ctx.shadowBlur=14; ctx.fillText(val('fShop'), 60, 260); ctx.shadowBlur=0; }
   } else if(seg.type === 'intro'){
     const p = S.photos[seg.idx ?? 0]; if(p){ if(p.el) syncVideo(p, 0, null); drawImg(p, k*0.5, 1); }
     ctx.fillStyle = 'rgba(10,6,20,.45)'; ctx.fillRect(0,0,W,H);
@@ -610,7 +640,7 @@ function drawSeg(seg, lt, activeSet){
   } else if(seg.type === 'grid'){
     ctx.fillStyle = '#181422'; ctx.fillRect(0,0,W,H);
     const items = S.photos.slice(0, 4), n = items.length, names = val('fGrid').split(',').map(x => x.trim());
-    const rows = Math.ceil(n/2), cw = 470, ch = rows === 1 ? 760 : 540, top = rows === 1 ? 560 : 450;
+    const rows = Math.ceil(n/2), cw = 470, ch = rows === 1 ? 700 : 430, top = rows === 1 ? 520 : 430;
     items.forEach((p, i) => {
       const x = n === 1 ? (W-cw)/2 : 50 + (i%2)*(cw+40), y = top + Math.floor(i/2)*(ch+90);
       const a = ease(Math.min(1, Math.max(0, (lt - i*0.08)/0.35)));
@@ -628,7 +658,7 @@ function drawSeg(seg, lt, activeSet){
     if(n > 1){ ctx.font = '700 52px "Be Vietnam Pro", sans-serif'; ctx.fillStyle = '#FFD640'; ctx.fillText('Comment số ' + items.map((_, i) => i+1).join(' - ') + ' nhé', W/2, 372); }
     ctx.restore();
     if(val('fCta')){ const a = ease(Math.min(1, Math.max(0, (lt-0.6)/0.3))); const th = THEMES[S.theme];
-      ctx.save(); ctx.globalAlpha = a; const pulse = 1 + 0.04*Math.sin(lt*7); ctx.translate(W/2, 1790); ctx.scale(pulse, pulse);
+      ctx.save(); ctx.globalAlpha = a; const pulse = 1 + 0.04*Math.sin(lt*7); ctx.translate(W/2, 1540); ctx.scale(pulse, pulse);
       pill(val('fCta'), 0, -56, '800 58px "Be Vietnam Pro", sans-serif', th.accent === '#1E1B26' ? '#1F6FE5' : th.accent, '#fff', 50, 112); ctx.restore(); }
   } else if(seg.type === 'outro'){
     const src = S.product || S.photos[S.photos.length-1];
@@ -637,14 +667,15 @@ function drawSeg(seg, lt, activeSet){
     ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(0,0,W,H);
     const up = ease(Math.min(1, lt/0.5));
     ctx.save(); ctx.translate(0, (1-up)*120); ctx.globalAlpha = up;
-    const cx = 80, cw = W-160, cy = 260, ch = 1250;
+    ctx.font = '700 58px "Be Vietnam Pro", sans-serif'; const nameLines = wrap(val('fName') || 'Tên sản phẩm', W-260).slice(0,2);
+    const cx = 80, cw = W-160, cy = 200, ch = 1180 + (nameLines.length-1)*70 - (val('fOld') ? 0 : 120) + (val('fShop') ? 60 : 0);
     ctx.save(); ctx.shadowColor='rgba(0,0,0,.35)'; ctx.shadowBlur=50; rr(cx, cy, cw, ch, 48); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore();
-    if(src){ ctx.save(); rr(cx+40, cy+40, cw-80, 760, 30); ctx.clip(); ctx.fillStyle = '#F2F2F5'; ctx.fillRect(cx+40, cy+40, cw-80, 760);
-      const im = src.img; const r = Math.min((cw-80)/dimW(im), 760/dimH(im)); const s2 = 1 + 0.04*k;
-      const w = dimW(im)*r*s2, h = dimH(im)*r*s2; ctx.drawImage(im, cx+40 + (cw-80-w)/2, cy+40 + (760-h)/2, w, h); ctx.restore(); }
+    if(src){ ctx.save(); rr(cx+40, cy+40, cw-80, 700, 30); ctx.clip(); ctx.fillStyle = '#F2F2F5'; ctx.fillRect(cx+40, cy+40, cw-80, 700);
+      const im = src.img; const r = Math.min((cw-80)/dimW(im), 700/dimH(im)); const s2 = 1 + 0.04*k;
+      const w = dimW(im)*r*s2, h = dimH(im)*r*s2; ctx.drawImage(im, cx+40 + (cw-80-w)/2, cy+40 + (700-h)/2, w, h); ctx.restore(); }
     ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = '#262238';
     ctx.font = '700 58px "Be Vietnam Pro", sans-serif';
-    let y = cy + 900; wrap(val('fName') || 'Tên sản phẩm', cw-100).slice(0,2).forEach(l => { ctx.fillText(l, W/2, y); y += 70; });
+    let y = cy + 840; nameLines.forEach(l => { ctx.fillText(l, W/2, y); y += 70; });
     y += 70;
     if(val('fOld')){ ctx.font = '500 52px "Be Vietnam Pro", sans-serif'; ctx.fillStyle = '#8A879A'; const t = val('fOld'); ctx.fillText(t, W/2, y);
       const tw = ctx.measureText(t).width; ctx.fillRect(W/2-tw/2-6, y-18, tw+12, 5); y += 120; }
@@ -652,14 +683,14 @@ function drawSeg(seg, lt, activeSet){
       ctx.save(); ctx.translate(W/2, y); ctx.scale(bounce, bounce); ctx.font = '800 132px "Baloo 2", sans-serif'; ctx.fillStyle = theme.accent === '#1E1B26' ? '#1F6FE5' : theme.accent; ctx.fillText(val('fPrice'), 0, 0); ctx.restore(); }
     ctx.restore();
     if(val('fCta')){ const a = ease(Math.min(1, Math.max(0, (lt-0.4)/0.4))); ctx.save(); ctx.globalAlpha = a;
-      const pulse = 1 + 0.04*Math.sin(lt*7); ctx.translate(W/2, cy+ch+150); ctx.scale(pulse,pulse);
+      const pulse = 1 + 0.04*Math.sin(lt*7); ctx.translate(W/2, cy+ch+130); ctx.scale(pulse,pulse);
       pill(val('fCta'), 0, -60, '800 58px "Be Vietnam Pro", sans-serif', theme.accent, theme.ink, 50, 120); ctx.restore(); }
-    if(val('fShop')){ ctx.font = '700 42px "Be Vietnam Pro", sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.fillText(val('fShop'), W/2, H-100); }
+    if(val('fShop')){ ctx.font = '700 42px "Be Vietnam Pro", sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.save(); ctx.translate(0, (1-up)*120); ctx.globalAlpha = up; ctx.fillStyle = '#8A879A'; ctx.font = '600 38px "Be Vietnam Pro", sans-serif'; ctx.fillText(val('fShop'), W/2, cy+ch-36); ctx.restore(); }
   }
 }
 function render(t){
   const {segs, total} = segments(); t = Math.max(0, Math.min(t, total - 1e-3));
-  ctx.setTransform(1,0,0,1,0,0); ctx.globalAlpha = 1; ctx.fillStyle = '#111'; ctx.fillRect(0,0,W,H);
+  ctx.setTransform(1,0,0,1,0,0); ctx.globalAlpha = 1; ctx.filter = 'none'; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.fillStyle = '#111'; ctx.fillRect(0,0,W,H);
   const active = new Set();
   let k = segs.findIndex(s => t < s.start + s.dur); if(k < 0) k = segs.length-1;
   const seg = segs[k], lt = t - seg.start;
@@ -674,7 +705,11 @@ function render(t){
   if(live) S.photos.forEach(p => { if(p.el && !active.has(p.el) && !p.el.paused) p.el.pause(); });
   if(S.ai){ ctx.setTransform(1,0,0,1,0,0); ctx.globalAlpha = 1;
     ctx.font = '600 30px "Be Vietnam Pro", sans-serif'; const tx = 'Hình ảnh có sử dụng AI'; const w = ctx.measureText(tx).width + 36;
-    rr(W-w-40, 60, w, 54, 27); ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fill(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(tx, W-40-w/2, 89); }
+    rr(60, H-484, w, 54, 27); ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fill(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(tx, 60+w/2, H-455); }
+  if(S.safe && !exporting){ ctx.setTransform(1,0,0,1,0,0); ctx.globalAlpha = 1; ctx.fillStyle = 'rgba(235,59,59,.28)';
+    ctx.fillRect(0, H-420, W, 420); ctx.fillRect(W-150, 700, 150, H-1120); ctx.fillRect(0, 0, W, 200);
+    ctx.fillStyle = '#fff'; ctx.font = '700 36px "Be Vietnam Pro", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('Vùng bị tên kênh, mô tả che', W/2, H-210); }
   return total;
 }
 
@@ -685,8 +720,12 @@ function refresh(){ if(!playing){ render(cur); fmt(); } }
 function tick(){
   const {total} = segments(); cur = (performance.now() - t0)/1000;
   if(cur >= total){ cur = total; stop(); render(cur - 0.001); fmt(); return; }
-  render(cur); fmt(); raf = requestAnimationFrame(tick);
+  const t1 = performance.now(); render(cur); perf.push(performance.now() - t1); fmt();
+  if(perf.length >= 45){ const avg = perf.reduce((a, b) => a + b, 0) / perf.length; perf = [];
+    if(avg > 30 && S.beauty){ S.beauty = false; $('fBeauty').checked = false; setStatus('Máy hơi yếu nên công cụ đã tắt "Làm đẹp màu" để video mượt hơn.'); } }
+  raf = requestAnimationFrame(tick);
 }
+let perf = [];
 function play(){
   const {total} = segments(); if(cur >= total - 0.05) cur = 0;
   playing = true; live = true; pauseAllVideos(); t0 = performance.now() - cur*1000; $('btnPlay').textContent = '❚❚'; $('btnPlay').setAttribute('aria-label','Tạm dừng');
@@ -717,10 +756,10 @@ $('btnExport').addEventListener('click', async () => {
       src.connect(gain).connect(dest); tracks.push(...dest.stream.getAudioTracks()); await actx.resume(); }
     catch(e){ setStatus('Không gắn được nhạc, video sẽ không có tiếng.'); }
   }
-  const rec = new MediaRecorder(new MediaStream(tracks), mime ? {mimeType:mime, videoBitsPerSecond:8_000_000} : {videoBitsPerSecond:8_000_000});
+  const rec = new MediaRecorder(new MediaStream(tracks), mime ? {mimeType:mime, videoBitsPerSecond:12_000_000} : {videoBitsPerSecond:12_000_000});
   const chunks = []; rec.ondataavailable = e => { if(e.data.size) chunks.push(e.data); };
   const done = new Promise(r => rec.onstop = r);
-  pauseAllVideos(); live = true; render(0); rec.start(250);
+  pauseAllVideos(); live = true; exporting = true; render(0); rec.start(250);
   if(el){ el.currentTime = 0; el.play().catch(()=>{}); gain.gain.setValueAtTime(1, actx.currentTime); gain.gain.setValueAtTime(1, actx.currentTime + Math.max(0,total-1.5)); gain.gain.linearRampToValueAtTime(0, actx.currentTime + total); }
   const start = performance.now();
   setStatus('Đang xuất video… giữ nguyên tab này đến khi xong.');
@@ -730,7 +769,7 @@ $('btnExport').addEventListener('click', async () => {
       if(t >= total + 0.15) resolve(); else requestAnimationFrame(step); };
     requestAnimationFrame(step);
   });
-  rec.stop(); await done; live = false; pauseAllVideos(); if(el) el.pause(); if(actx) actx.close();
+  rec.stop(); await done; live = false; exporting = false; pauseAllVideos(); if(el) el.pause(); if(actx) actx.close();
   vStream.getTracks().forEach(t => t.stop());
   outBlob = new Blob(chunks, {type: mime || 'video/webm'});
   const ov = $('outVideo'); if(ov.src) URL.revokeObjectURL(ov.src); ov.src = URL.createObjectURL(outBlob);
