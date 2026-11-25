@@ -53,6 +53,7 @@ header p{margin:6px 0 0;color:var(--muted);max-width:62ch}
 .ph .num{position:absolute;top:6px;left:6px;background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:12px;border-radius:20px;padding:1px 8px}
 .ph .tag{position:absolute;bottom:6px;left:6px;background:#000a;color:#fff;font-size:11px;border-radius:6px;padding:1px 6px}
 .ph .tools{display:flex;gap:4px;padding:6px}
+.ph .swap{margin:0 6px 6px;color:var(--accent);border-color:var(--accent)}
 .ph .tag.low{bottom:auto;top:6px;left:auto;right:6px;background:#C2410C}
 .ph .tools button{flex:1}
 .ph input{border:0;border-top:1px solid var(--line);border-radius:0;font-size:13px}
@@ -107,6 +108,10 @@ h3{margin:0;font-size:15px}
 .idea .tip{font-size:12.5px;color:var(--muted);margin:6px 0 0}
 .idea .ft{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .idea .tpl{font-size:12px;color:var(--muted)}
+.motions{display:flex;flex-direction:column;gap:8px}
+.motion{display:flex;gap:8px;align-items:flex-start}
+.motion .prompt{flex:1;min-width:0;padding:9px 11px;font-size:13px}
+.motion .prompt b{display:block;font-size:12px;color:var(--accent);margin-bottom:2px}
 .vsbox{background:var(--surface-2);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px}
 .side{font:inherit;font-size:12px;font-weight:800;border:0;border-top:1px solid var(--line);padding:6px;cursor:pointer;letter-spacing:.03em}
 .side.shop{background:#fff;color:#262238}
@@ -183,6 +188,8 @@ h3{margin:0;font-size:15px}
           </label>
         </div>
         <p class="hint">Trên máy tính có thể kéo thả cả clip và ảnh vào hai ô trên.</p>
+        <input type="file" id="inSwap" accept="video/*" hidden>
+        <p class="hint"><b>Muốn ảnh cử động thật?</b> Bấm <b>⇄ Thay bằng clip AI</b> dưới ảnh, sau khi tạo clip miễn phí theo hướng dẫn ở mục "Biến ảnh thành clip miễn phí" cuối trang.</p>
         <div class="photos" id="photoList"></div>
       </section>
 
@@ -241,13 +248,14 @@ h3{margin:0;font-size:15px}
           <button class="chip" data-v="fade" aria-pressed="true">Mờ dần</button>
           <button class="chip" data-v="slide" aria-pressed="false">Trượt ngang</button>
           <button class="chip" data-v="zoom" aria-pressed="false">Phóng to</button>
+          <button class="chip" data-v="punch" aria-pressed="false">Giật nhịp (bắt trend)</button>
         </div>
         <div class="row">
           <div class="f" style="font-size:13px;font-weight:600">Màu chủ đạo
             <div class="chips" id="colorChips" style="margin-top:4px"></div>
           </div>
           <label class="f">Mỗi ảnh hiện (giây)
-            <select id="fSecs"><option>1.5</option><option selected>2.5</option><option>3</option><option>4</option></select>
+            <select id="fSecs"><option>1</option><option>1.5</option><option selected>2.5</option><option>3</option><option>4</option></select>
           </label>
         </div>
         <label class="f">Nhạc nền (mp3, m4a…). Tiếng gốc của clip sẽ được tắt
@@ -294,7 +302,7 @@ h3{margin:0;font-size:15px}
 
   <div class="guide">
     <section class="sec">
-      <h2>Làm clip bé mặc đồ miễn phí</h2>
+      <h2>Làm clip miễn phí</h2>
       <h3>Cách 1: Quay thật (tốt nhất)</h3>
       <p class="hint" style="color:var(--fg)">Cho bé mặc đồ, quay dọc bằng điện thoại cạnh cửa sổ, mỗi cảnh 3–5 giây: bé xoay một vòng, bước tới gần máy, quay lưng khoe phía sau, cận cảnh họa tiết. Đúng sản phẩm, khách tin nhất và không tốn đồng nào.</p>
       <h3>Cách 2: Dùng AI (khi chưa có đồ thật)</h3>
@@ -306,9 +314,9 @@ h3{margin:0;font-size:15px}
       <div class="f" style="font-size:13px;font-weight:600">Câu lệnh A: ghép đồ</div>
       <div class="prompt" id="promptA">Cho bé gái trong ảnh 1 mặc bộ đồ trong ảnh 2. Giữ nguyên khuôn mặt, kiểu tóc và dáng người của bé. Giữ đúng màu sắc, họa tiết và kiểu dáng của bộ đồ. Bé đứng tạo dáng vui vẻ, nền phòng sáng sủa, ánh sáng tự nhiên, ảnh dọc tỉ lệ 9:16, chân thực như ảnh chụp.</div>
       <button class="btn copy" data-t="promptA" style="align-self:flex-start">Sao chép câu lệnh A</button>
-      <div class="f" style="font-size:13px;font-weight:600">Câu lệnh B: làm ảnh cử động</div>
-      <div class="prompt" id="promptB">Bé gái xoay một vòng chậm rãi, váy xòe bay nhẹ, bé mỉm cười nhìn vào máy quay rồi vẫy tay. Máy quay đứng yên, chuyển động tự nhiên, giữ nguyên khuôn mặt và trang phục.</div>
-      <button class="btn copy" data-t="promptB" style="align-self:flex-start">Sao chép câu lệnh B</button>
+      <h3 id="motionHead">Biến ảnh thành clip miễn phí: câu lệnh chuyển động</h3>
+      <p class="hint" style="color:var(--fg)">Mở app <a href="https://klingai.com" target="_blank" rel="noopener">Kling AI</a>, <a href="https://hailuoai.video" target="_blank" rel="noopener">Hailuo AI</a> hoặc <a href="https://www.meta.ai" target="_blank" rel="noopener">Meta AI</a> (đều có lượt miễn phí mỗi ngày), chọn tạo video từ ảnh, tải ảnh lên, rồi dán một câu lệnh dưới đây. Tải clip về, bấm <b>⇄ Thay bằng clip AI</b> dưới ảnh đó ở bước 1.</p>
+      <div class="motions" id="motionList"></div>
       <p class="hint">Bản miễn phí của các app này giới hạn lượt mỗi ngày, có thể phải chờ và đôi khi có logo trên clip. Hãy xem kỹ clip AI trước khi dùng: tay chân, khuôn mặt và họa tiết áo đôi khi bị méo.</p>
     </section>
     <section class="sec">
@@ -422,12 +430,14 @@ function renderPhotoList(){
     el.innerHTML = `<div class="thumb"><span class="num">${i+1}</span>${p.sample?'<span class="tag">Ảnh mẫu</span>':''}${p.kind==='video'?'<span class="tag">▶ Clip '+p.dur.toFixed(1)+'s</span>':''}${!p.sample && Math.min(dimW(p.img),dimH(p.img)) < 720 ? '<span class="tag low">Độ nét thấp ('+Math.min(dimW(p.img),dimH(p.img))+'p)</span>':''}</div>
       <input type="text" id="cap-${p.id}" placeholder="Chữ trên ảnh/clip. Nhiều câu: cách nhau dấu |">
       ${S.template==='vs'?`<button class="side ${p.side}" data-a="side">${esc(p.side==='shop'?(val('fLabelA')||'Nhóm 1'):(val('fLabelB')||'Nhóm 2'))} · bấm để đổi</button>`:''}
-      <div class="tools"><button class="btn sm" data-a="up" aria-label="Đưa lên trước">←</button><button class="btn sm" data-a="down" aria-label="Đưa ra sau">→</button><button class="btn sm" data-a="del">Xóa</button></div>`;
+      <div class="tools"><button class="btn sm" data-a="up" aria-label="Đưa lên trước">←</button><button class="btn sm" data-a="down" aria-label="Đưa ra sau">→</button><button class="btn sm" data-a="del">Xóa</button></div>
+      ${p.kind!=='video' && !p.sample ? '<button class="btn sm swap" data-a="swap">⇄ Thay bằng clip AI</button>' : ''}`;
     el.querySelector('.thumb').style.backgroundImage = `url(${thumbURL(p)})`;
     const inp = el.querySelector('input'); inp.value = p.caption;
     inp.addEventListener('input', () => { p.caption = inp.value; refresh(); });
     el.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
       const a = b.dataset.a, j = S.photos.indexOf(p);
+      if(a === 'swap'){ swapTarget = p; $('inSwap').click(); return; }
       if(a === 'del') S.photos.splice(j,1);
       if(a === 'side') p.side = p.side === 'shop' ? 'real' : 'shop';
       if(a === 'up' && j > 0) [S.photos[j-1], S.photos[j]] = [S.photos[j], S.photos[j-1]];
@@ -446,6 +456,15 @@ function wireDrop(zone, input, handler){
 }
 wireDrop($('dropPhotos'), $('inPhotos'), addPhotos);
 wireDrop($('dropVideos'), $('inVideos'), addPhotos);
+let swapTarget = null;
+$('inSwap').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; const p = swapTarget; swapTarget = null;
+  if(!f || !p) return;
+  try{ stop(); const el = await loadVideo(f);
+    Object.assign(p, {kind:'video', img:el, el, dur:Math.min(12, el.duration || 4), blur:makeBlur(el), thumb:null});
+    renderPhotoList(); refresh(); setStatus('Đã thay ảnh bằng clip, giữ nguyên chữ và vị trí. Bấm ▶ để xem.'); }
+  catch(err){ setStatus(err.message); }
+});
 wireDrop($('dropProduct'), $('inProduct'), async files => {
   const f = [...files].find(f => f.type.startsWith('image/')); if(!f) return;
   try{ const {img} = await loadFile(f); S.product = {img, blur:makeBlur(img)};
@@ -694,7 +713,11 @@ function render(t){
   const active = new Set();
   let k = segs.findIndex(s => t < s.start + s.dur); if(k < 0) k = segs.length-1;
   const seg = segs[k], lt = t - seg.start;
-  if(k > 0 && lt < TR && S.template !== 'vs'){
+  if(k > 0 && S.transition === 'punch' && S.template !== 'vs' && lt < 0.28){
+    const q = lt/0.28, sc = 1 + 0.13*(1-q)*(1-q), sh = (1-q)*14*Math.sin(lt*90);
+    ctx.save(); ctx.translate(W/2 + sh, H/2); ctx.scale(sc, sc); ctx.translate(-W/2, -H/2); drawSeg(seg, lt, active); ctx.restore();
+    ctx.fillStyle = `rgba(255,255,255,${Math.max(0, .55 - lt*4.5)})`; ctx.fillRect(0,0,W,H);
+  } else if(k > 0 && lt < TR && S.template !== 'vs' && S.transition !== 'punch'){
     const prev = segs[k-1]; drawSeg(prev, prev.dur + lt, null);
     const p = ease(lt/TR); ctx.save();
     if(S.transition === 'fade'){ ctx.globalAlpha = p; }
@@ -1037,6 +1060,28 @@ function applyIdea(i){
   $('dropVideos').scrollIntoView({behavior:'smooth', block:'center'});
 }
 renderIdeas();
+
+
+/* ---------- Câu lệnh chuyển động ---------- */
+const MOTIONS = [
+ ['Bé xoay váy', 'Bé gái xoay một vòng chậm, váy xòe bay nhẹ, bé cười nhìn máy quay rồi vẫy tay. Máy quay đứng yên, chuyển động tự nhiên, giữ nguyên khuôn mặt và trang phục.'],
+ ['Bé bước tới gần máy', 'Bé đi chậm về phía máy quay, mỉm cười, tay đung đưa tự nhiên. Máy quay lùi nhẹ theo bé. Giữ nguyên khuôn mặt và quần áo.'],
+ ['Bé đội mũ, kẹp tóc', 'Bé đưa tay chỉnh mũ, nghiêng đầu cười, gió nhẹ thổi tóc. Máy quay đứng yên, cận nửa người. Giữ đúng màu và kiểu phụ kiện.'],
+ ['Giày bước đi', 'Cận đôi chân bé mang giày bước từng bước trên sàn gỗ, máy quay ngang tầm chân lia nhẹ theo. Giữ đúng màu và kiểu giày.'],
+ ['Túi, balo', 'Bé đeo túi, xoay người khoe túi rồi vỗ nhẹ lên túi và cười. Máy quay đứng yên. Giữ đúng màu và kiểu túi.'],
+ ['Vòng, trang sức', 'Cận bàn tay đeo vòng xoay nhẹ dưới ánh nắng, vòng lấp lánh. Máy quay tiến chậm vào gần. Giữ đúng kiểu dáng món đồ.'],
+ ['Đồ sơ sinh trải phẳng', 'Bộ đồ sơ sinh trải phẳng trên giường, gió nhẹ làm vải lay động, nắng chiếu qua cửa sổ. Máy quay từ trên xuống, tiến chậm vào gần.'],
+ ['Mẹ bế bé', 'Người mẹ bế em bé, đung đưa nhẹ nhàng, mỉm cười nhìn con. Máy quay lia chậm vòng quanh. Giữ nguyên trang phục.'],
+ ['Mẹ bỉm khoe đồ', 'Người phụ nữ mặc bộ đồ, xoay nhẹ khoe dáng, tay vuốt tà áo, mỉm cười. Máy quay đứng yên, quay toàn thân.'],
+ ['Sản phẩm xoay 360°', 'Sản phẩm xoay chậm một vòng trên nền sạch, ánh sáng studio mềm. Máy quay đứng yên. Giữ đúng màu sắc, họa tiết, logo.'],
+ ['Váy bay trong gió', 'Chiếc váy treo trên móc, gió nhẹ thổi tà váy bay phấp phới, nắng chiều ấm. Máy quay đứng yên, cận cảnh.'],
+];
+MOTIONS.forEach(([name, text]) => {
+  const row = document.createElement('div'); row.className = 'motion';
+  row.innerHTML = `<div class="prompt"><b>${esc(name)}</b>${esc(text)}</div><button class="btn sm">Chép</button>`;
+  row.querySelector('button').addEventListener('click', e => copyText(text, e.currentTarget));
+  $('motionList').appendChild(row);
+});
 
 /* ---------- Khởi động ---------- */
 addSamples(); renderPhotoList(); render(0); fmt();
