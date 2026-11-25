@@ -145,15 +145,15 @@ h3{margin:0;font-size:15px}
     <div class="panel">
       <section class="sec ai" id="aiSec">
         <h2><span class="step">✦</span>AI soạn kịch bản từ ảnh sản phẩm</h2>
-        <p class="hint">Gửi 1–3 ảnh sản phẩm (quần áo, dụng cụ…). Claude sẽ xem ảnh rồi viết kịch bản từng cảnh, lời thoại, chữ trên video, câu lệnh để AI tạo cảnh người mẫu thật, kèm caption và hashtag khi đăng.</p>
+        <p class="hint">Gửi 1–3 ảnh sản phẩm (quần áo, giày dép, phụ kiện, đồ sơ sinh, đồ cho mẹ…). Claude sẽ xem ảnh rồi viết kịch bản từng cảnh, lời thoại, chữ trên video, câu lệnh để AI tạo cảnh người mẫu thật, kèm caption và hashtag khi đăng.</p>
         <label class="drop" id="dropAi" tabindex="0" style="padding:12px">
           <input type="file" id="inAi" accept="image/*" multiple>
           <strong>Chọn ảnh sản phẩm</strong> (tối đa 3 ảnh)
         </label>
         <div class="thumbs" id="aiThumbs"></div>
         <div class="row3">
-          <label class="f">Loại sản phẩm<select id="aType"><option>Quần áo trẻ em</option><option>Mũ nón trẻ em</option><option>Đồ sơ sinh</option><option>Phụ kiện cho bé (kẹp tóc, giày dép, balo)</option><option>Quần áo nữ</option><option>Quần áo nam</option><option>Đồ dùng, dụng cụ gia đình</option><option>Đồ chơi trẻ em</option><option>Mỹ phẩm, chăm sóc cá nhân</option><option>Khác</option></select></label>
-          <label class="f">Người mẫu AI<select id="aModel"><option>Bé gái 3–6 tuổi</option><option>Bé trai 3–6 tuổi</option><option>Em bé 1–2 tuổi</option><option>Em bé sơ sinh (có thể thay bằng búp bê)</option><option>Mẹ và bé</option><option>Phụ nữ trẻ</option><option>Nam giới trẻ</option><option>Chỉ quay tay người dùng sản phẩm</option></select></label>
+          <label class="f">Loại sản phẩm<select id="aType"><option>Quần áo trẻ em</option><option>Giày dép trẻ em</option><option>Phụ kiện (mũ nón, tất, túi xách, vòng, trang sức…)</option><option>Đồ sơ sinh</option><option>Đồ cho mẹ bỉm</option><option>Quần áo nữ</option><option>Quần áo nam</option><option>Đồ dùng, dụng cụ gia đình</option><option>Đồ chơi trẻ em</option><option>Mỹ phẩm, chăm sóc cá nhân</option><option>Khác</option></select></label>
+          <label class="f">Người mẫu AI<select id="aModel"><option>Bé gái 3–6 tuổi</option><option>Bé trai 3–6 tuổi</option><option>Em bé 1–2 tuổi</option><option>Em bé sơ sinh (có thể thay bằng búp bê)</option><option>Mẹ và bé</option><option>Mẹ bỉm sau sinh</option><option>Phụ nữ trẻ</option><option>Nam giới trẻ</option><option>Chỉ quay tay người dùng sản phẩm</option></select></label>
           <label class="f">Phong cách<select id="aStyle"><option>Review chân thật, gần gũi</option><option>Vui nhộn, bắt trend</option><option>Sang trọng, tinh tế</option><option>Mẹo hay, giải quyết vấn đề</option></select></label>
         </div>
         <label class="f">Ý tưởng video<select id="aIdea"><option value="">Để Claude tự chọn ý tưởng hợp nhất</option></select></label>
@@ -900,7 +900,7 @@ $('btnAiStop').addEventListener('click', () => AI.ctl?.abort());
 
 
 /* ---------- Kho ý tưởng ---------- */
-const CATS = {all:'Mọi sản phẩm', quanao:'Quần áo bé', mu:'Mũ nón', sosinh:'Đồ sơ sinh'};
+const CATS = {all:'Mọi sản phẩm', quanao:'Quần áo bé', giay:'Giày dép bé', phukien:'Phụ kiện', sosinh:'Đồ sơ sinh', mebim:'Đồ cho mẹ bỉm'};
 const TPL = {khoe:'Khoe đồ', set:'Đếm set', combo:'Bé + sản phẩm', vs:'So sánh 2 nhóm'};
 const IDEAS = [
  {cat:'all', name:'Ảnh shop vs Hàng thật', why:'Đánh vào nỗi lo "mua về không giống hình", khách tin và hay comment.', hook:'Mua online về có giống ảnh không?', tpl:'vs', A:'ẢNH SHOP', B:'HÀNG THẬT', flash:'HÀNG VỀ RỒI!', gt:'Bé nhà bạn hợp màu nào?',
@@ -921,13 +921,13 @@ const IDEAS = [
   shots:['Mẹ chọn đồ, bé mặc thử','Bé tự chọn đồ (thường rất ngộ nghĩnh)','Bé mặc bộ mình chọn, tạo dáng'], tip:'Đưa 1 clip mẹ chọn và 1 clip bé chọn lên đầu danh sách để lưới cuối có đúng 2 phe.'},
  {cat:'quanao', name:'Đồ đôi mẹ và bé', why:'Đồ đôi luôn được hỏi "mua ở đâu", tỉ lệ bấm giỏ hàng cao.', hook:'Mặc đồ đôi với con gái, ai cũng hỏi mua ở đâu', tpl:'combo',
   shots:['Hai mẹ con đứng cạnh nhau, quay từ chân lên','Nắm tay đi dạo','Cận hai chiếc áo giống nhau'], tip:'Không muốn lộ mặt thì quay từ cổ trở xuống.'},
- {cat:'mu', name:'1 chiếc mũ, 4 cách phối', why:'Cho thấy một món dùng được nhiều kiểu, khách thấy đáng tiền.', hook:'1 chiếc mũ, 4 kiểu phối cho bé', tpl:'set', setLabel:'CÁCH',
-  shots:['Bé đội mũ với váy','Đội mũ với áo thun quần short','Đội mũ đi biển','Đội mũ đi chơi công viên'], tip:'Mỗi cách 2 giây, cắt đúng nhịp nhạc.'},
- {cat:'mu', name:'Mũ đi chơi, đi biển', why:'Đúng nhu cầu theo mùa, dễ lên xu hướng vào hè và dịp lễ.', hook:'Đi chơi mà quên mũ cho bé là hỏng', tpl:'khoe',
+ {cat:'phukien', name:'1 phụ kiện, 4 cách phối', why:'Cho thấy một món (mũ, túi, kẹp tóc…) dùng được nhiều kiểu, khách thấy đáng tiền.', hook:'1 món phụ kiện, 4 kiểu phối cho bé', tpl:'set', setLabel:'CÁCH',
+  shots:['Phụ kiện đi cùng váy','Đi cùng áo thun quần short','Đi biển','Đi chơi công viên'], tip:'Mỗi cách 2 giây, cắt đúng nhịp nhạc.'},
+ {cat:'phukien', name:'Mũ đi chơi, đi biển', why:'Đúng nhu cầu theo mùa, dễ lên xu hướng vào hè và dịp lễ.', hook:'Đi chơi mà quên mũ cho bé là hỏng', tpl:'khoe',
   shots:['Bé đội mũ dưới nắng','Cận vành mũ','Cận dây quai cài cằm (nếu có)','Bé chạy chơi, mũ không rơi (chỉ khi đúng thật)'], tip:'Chỉ nói "chống tia UV" khi shop có thông tin chứng nhận rõ ràng.'},
- {cat:'mu', name:'Phản ứng của bé khi đội mũ mới', why:'Video em bé đáng yêu được chia sẻ rất nhiều.', hook:'Phản ứng của bé khi lần đầu đội mũ này', tpl:'khoe',
+ {cat:'phukien', name:'Phản ứng của bé khi đội mũ mới', why:'Video em bé đáng yêu được chia sẻ rất nhiều.', hook:'Phản ứng của bé khi lần đầu đội mũ này', tpl:'khoe',
   shots:['Bé ngạc nhiên khi thấy mũ','Bé soi gương và cười','Bé tự tháo ra đội lại'], tip:'Đừng ép bé đội. Cứ để bé tự nhiên, cảnh thật mới đáng yêu.'},
- {cat:'mu', name:'Gấp gọn bỏ túi', why:'Tính năng "gấp gọn" nhìn thấy ngay, dễ thuyết phục.', hook:'Chiếc mũ gấp gọn bằng lòng bàn tay', tpl:'vs', A:'GẤP GỌN', B:'MỞ RA', flash:'BẬT!', gt:'Bạn thích màu nào?',
+ {cat:'phukien', name:'Gấp gọn bỏ túi', why:'Tính năng "gấp gọn" nhìn thấy ngay, dễ thuyết phục.', hook:'Chiếc mũ gấp gọn bằng lòng bàn tay', tpl:'vs', A:'GẤP GỌN', B:'MỞ RA', flash:'BẬT!', gt:'Bạn thích màu nào?',
   shots:['Mũ gấp nhỏ trong lòng bàn tay hoặc túi','Mở mũ ra, vỗ nhẹ cho phồng','Bé đội lên'], tip:'Chỉ làm ý tưởng này với mũ gấp được thật.'},
  {cat:'sosinh', name:'Chuẩn bị đồ đi sinh', why:'Mẹ bầu tìm kiếm rất nhiều và hay bấm lưu video, giúp video sống lâu.', hook:'Mẹ bầu tháng cuối đã đủ đồ đi sinh chưa?', tpl:'set', setLabel:'MÓN', cta:'Lưu lại kẻo quên nhé',
   shots:['Từng món đặt lên nền trắng, tay bỏ vào giỏ','Mỗi món 2 giây, ghi tên món','Cảnh cuối là cả giỏ đồ đầy đủ'], tip:'Caption nên có danh sách đầy đủ để mẹ bầu lưu lại.'},
@@ -939,6 +939,68 @@ const IDEAS = [
   shots:['Hộp quà đóng gói xinh','Mở hộp, lấy từng món ra','Cả set bày đẹp'], tip:'Điền giá cả set ở bước 2 để hiện ở cảnh cuối.'},
  {cat:'sosinh', name:'Xếp tủ đồ cho em bé', why:'Video sắp xếp gọn gàng thỏa mãn mắt, người xem hay xem hết.', hook:'Xếp tủ đồ cho em bé sắp chào đời', tpl:'khoe',
   shots:['Tủ hoặc giỏ đồ còn lộn xộn','Gấp từng món, quay cận tay','Tủ đồ gọn gàng, đẹp mắt'], tip:'Quay từ trên xuống, ánh sáng cửa sổ là đẹp nhất.'},
+ {cat:'phukien', name:'Phối đồ từ đầu đến chân', why:'Một video gắn được nhiều món: mũ, kẹp tóc, vòng, túi, tất.', hook:'Set đồ đi chơi của bé có những gì?', tpl:'set', setLabel:'MÓN',
+  shots:['Quay từ đầu xuống: mũ hoặc kẹp tóc','Vòng tay, dây chuyền','Túi đeo chéo','Tất và giày','Toàn thân bé đã phối xong'], tip:'Mỗi món 1,5–2 giây, ghi tên món vào ô chữ để khách dễ hỏi.'},
+ {cat:'phukien', name:'Mở hộp trang sức, vòng xinh', why:'Đồ nhỏ lấp lánh quay cận rất bắt mắt, xem đi xem lại.', hook:'Hộp phụ kiện xinh xỉu cho con gái', tpl:'khoe',
+  shots:['Hộp còn nguyên','Mở nắp, quay cận thật gần','Lấy từng món ra đặt lên tay','Đeo thử cho bé hoặc đặt cạnh váy'], tip:'Trang sức cho bé nhỏ tuổi cần nói rõ độ tuổi phù hợp. Không để trẻ dưới 3 tuổi ngậm đồ nhỏ trong video.'},
+ {cat:'phukien', name:'Tất xinh: đoán đôi nào', why:'Tất nhiều màu hợp với dạng bình chọn, dễ có comment.', hook:'Chọn giúp bé 1 đôi tất đi học', tpl:'vs', A:'CHỌN 1', B:'CHỌN 1', flash:'', gt:'Bạn chọn đôi số mấy?',
+  shots:['Xếp các đôi tất thành hàng','Cận từng đôi, mỗi đôi 1 cảnh','Bé đi thử đôi được chọn'], tip:'Đặt tên ô ở lưới cuối theo màu hoặc họa tiết của từng đôi.'},
+ {cat:'giay', name:'Đo chân rồi mới mua', why:'Mẹ hay lo chọn sai size giày, video này giải đáp đúng nỗi lo.', hook:'Mua giày online cho bé sao cho vừa?', tpl:'vs', A:'ĐO CHÂN', B:'ĐI THỬ', flash:'VỪA KHÍT!', gt:'Bé nhà bạn đi size mấy?',
+  shots:['Đặt chân bé lên tờ giấy, kẻ viền bàn chân','Đo chiều dài bằng thước','So với bảng size của shop','Bé đi thử giày, cận mũi giày'], tip:'Ghi số đo và size tương ứng vào ô chữ, khách rất thích lưu lại.'},
+ {cat:'giay', name:'Những bước đi đầu tiên', why:'Khoảnh khắc bé tập đi rất cảm xúc, được chia sẻ nhiều.', hook:'Đôi giày cho những bước đi đầu tiên của con', tpl:'khoe',
+  shots:['Cận đôi giày trên sàn','Mẹ xỏ giày cho bé','Bé chập chững bước đi, quay ngang tầm chân','Bé cười'], tip:'Chỉ nói "đế mềm, chống trượt" khi shop có thông tin rõ ràng.'},
+ {cat:'giay', name:'1 đôi giày, mấy bộ đồ', why:'Cho thấy đôi giày dễ phối, khách thấy đáng mua.', hook:'1 đôi giày phối được bao nhiêu bộ?', tpl:'set', setLabel:'SET',
+  shots:['Đôi giày đặt giữa khung hình','Bé mang giày với váy','Với quần jean','Với đồ thể thao'], tip:'Quay cùng một góc, chỉ đổi đồ, cắt theo nhịp nhạc.'},
+ {cat:'giay', name:'Cận chất liệu, đế giày', why:'Khách mua giày hay soi đế và đường may, quay cận tạo tin tưởng.', hook:'Soi kỹ đôi giày trước khi mua cho bé', tpl:'khoe',
+  shots:['Bẻ cong đế giày nhẹ nhàng','Cận đường may, quai dán','Cận lót trong giày','Bé mang và chạy'], tip:'Quay ánh sáng tự nhiên để thấy đúng màu thật.'},
+ {cat:'mebim', name:'Đồ mặc nhà cho mẹ bỉm', why:'Mẹ bỉm cần đồ tiện cho con bú, video chỉ rõ chi tiết sẽ chốt đơn tốt.', hook:'Đồ mặc nhà mẹ bỉm nào cũng cần 1 bộ', tpl:'khoe',
+  shots:['Mẹ mặc đồ, quay từ cổ trở xuống nếu ngại lộ mặt','Cận chi tiết tiện cho con bú (khóa, khe mở)','Bế con đi lại trong nhà','Cận chất vải'], tip:'Quay kín đáo, không quay cảnh đang cho bú.'},
+ {cat:'mebim', name:'Xếp đồ vào túi bỉm sữa', why:'Video xếp đồ gọn gàng thỏa mãn mắt, mẹ hay lưu để học.', hook:'Túi bỉm sữa của mẹ có gì?', tpl:'set', setLabel:'MÓN', cta:'Lưu lại để chuẩn bị nhé',
+  shots:['Túi rỗng đặt trên bàn','Bỏ từng món vào: bỉm, khăn, bình sữa, đồ thay','Cận các ngăn của túi','Túi đã đầy đủ, kéo khóa'], tip:'Ghi tên từng món vào ô chữ, gắn link cả túi và các món.'},
+ {cat:'mebim', name:'Một ngày của mẹ bỉm', why:'Kiểu video đời thường được đồng cảm, dễ lồng ghép sản phẩm tự nhiên.', hook:'Một ngày bận rộn của mẹ bỉm sữa', tpl:'khoe',
+  shots:['Sáng: pha sữa, thay đồ cho con','Trưa: món đồ giúp mẹ đỡ vất vả','Chiều: đưa con đi dạo','Tối: mẹ thư giãn với sản phẩm'], tip:'Mỗi cảnh ghi giờ ở ô chữ (7h, 12h…) để video có nhịp.'},
+ {cat:'mebim', name:'Quà cho mẹ sau sinh', why:'Người đi thăm sinh luôn tìm quà cho mẹ, không chỉ cho bé.', hook:'Đi thăm sinh, tặng mẹ món này mới tinh tế', tpl:'combo',
+  shots:['Hộp quà gói xinh','Mở ra từng món dành cho mẹ','Cả set bày đẹp'], tip:'Điền giá cả set ở bước 2 để hiện ở cảnh cuối.'},
+ {cat:'all', name:'Mua lẻ vs Mua combo', why:'So sánh giá rõ ràng làm khách thấy hời, dễ chốt combo.', hook:'Mua lẻ hay mua combo thì lợi hơn?', tpl:'vs', A:'MUA LẺ', B:'MUA COMBO', flash:'TIẾT KIỆM HƠN!', gt:'Bạn chọn combo nào?',
+  shots:['Từng món riêng lẻ, ghi giá lẻ vào ô chữ','Cả combo xếp chung','Cận món tặng kèm (nếu có)'], tip:'Chỉ ghi giá đúng như shop đang bán, cập nhật khi giá đổi.'},
+ {cat:'all', name:'Trả lời bình luận bằng video', why:'TikTok ưu tiên video trả lời bình luận, khách hỏi gì làm đúng cái đó.', hook:'Trả lời bạn hỏi: bé 2 tuổi mặc size nào?', tpl:'khoe',
+  shots:['Chụp màn hình bình luận của khách','Quay sản phẩm trả lời đúng câu hỏi','Bé mặc thử hoặc đo size'], tip:'Dùng tính năng "Trả lời bằng video" của TikTok để bình luận hiện trên video.'},
+ {cat:'all', name:'Top 3 món bán chạy', why:'Danh sách "top" khiến người xem tò mò đợi đến món số 1.', hook:'Top 3 món mẹ nào cũng mua tuần này', tpl:'set', setLabel:'TOP',
+  shots:['Món top 3','Món top 2','Món top 1 để cuối, quay đẹp nhất'], tip:'Sắp thứ tự ở bước 1 sao cho món hot nhất nằm cuối.'},
+ {cat:'quanao', name:'Búng tay đổi đồ', why:'Kiểu biến hình búng tay luôn được ưa chuộng, xem vui mắt.', hook:'Búng tay một cái, bé đổi đồ', tpl:'vs', A:'ĐỒ NGỦ', B:'ĐỒ ĐI CHƠI', flash:'BÚNG TAY!', gt:'Bé hợp bộ nào nhất?',
+  shots:['Bé mặc đồ ngủ, búng tay','Cùng góc máy, bé mặc đồ mới tạo dáng','Lặp lại với 2–3 bộ khác'], tip:'Đặt điện thoại cố định một chỗ để hai cảnh khớp nhau.'},
+ {cat:'quanao', name:'Bé bao nhiêu ký mặc size nào', why:'Câu hỏi size là câu khách hỏi nhiều nhất, video này trả lời luôn.', hook:'Bé 15kg mặc size nào vừa đẹp?', tpl:'khoe',
+  shots:['Bé đứng cạnh thước đo chiều cao','Bé mặc thử size đang bán, xoay trước sau','Cận độ dài tay, độ dài váy hoặc quần'], tip:'Ghi "Bé 98cm, 15kg mặc size 100" vào ô chữ.'},
+ {cat:'quanao', name:'Giặt thử có phai màu không', why:'Khách sợ đồ rẻ phai màu, video thử thật tạo niềm tin.', hook:'Giặt thử váy này xem có phai màu không', tpl:'vs', A:'TRƯỚC KHI GIẶT', B:'SAU KHI GIẶT', flash:'GIẶT XONG!', gt:'Bạn tin chưa?',
+  shots:['Váy mới, cận màu','Bỏ vào chậu hoặc máy giặt','Váy sau khi giặt và phơi, cận màu'], tip:'Chỉ đăng khi kết quả thật sự không phai. Không chỉnh màu khác đi.'},
+ {cat:'quanao', name:'Tết, lễ này cho con mặc gì', why:'Đúng dịp lễ, Tết lượt tìm đồ tăng mạnh.', hook:'Tết này cho con mặc gì cho xinh?', tpl:'set', setLabel:'SET',
+  shots:['Bé mặc từng bộ, đứng cạnh cây đào, cây mai hoặc góc trang trí','Cận chi tiết đẹp của mỗi bộ','Bé lì xì, tạo dáng'], tip:'Đăng trước dịp lễ 2–3 tuần để kịp giao hàng.'},
+ {cat:'phukien', name:'Balo đi học có gì bên trong', why:'Mùa tựu trường, mẹ rất hay xem video soạn balo.', hook:'Soạn balo đi học cho con cùng mình', tpl:'set', setLabel:'MÓN',
+  shots:['Balo rỗng, cận các ngăn','Bỏ từng món vào','Bé đeo balo đi học'], tip:'Gắn link cả balo và các món bên trong.'},
+ {cat:'phukien', name:'5 kiểu tóc với 1 bộ kẹp', why:'Video làm tóc cho bé gái luôn được lưu nhiều.', hook:'5 kiểu tóc cho bé đi học trong 1 phút', tpl:'set', setLabel:'KIỂU',
+  shots:['Bộ kẹp tóc, dây buộc bày trên bàn','Làm từng kiểu tóc, quay sau lưng bé','Cận từng kiểu đã xong'], tip:'Quay nhanh, mỗi kiểu 2 giây là đủ.'},
+ {cat:'giay', name:'Bé tự mang giày', why:'Giày quai dán dễ mang là điểm mẹ rất thích.', hook:'Bé 3 tuổi tự mang giày trong 5 giây', tpl:'khoe',
+  shots:['Đôi giày đặt trước mặt bé','Bé tự xỏ chân, dán quai','Bé đứng dậy chạy đi'], tip:'Để bé làm tự nhiên. Cảnh bé lóng ngóng cũng rất đáng yêu.'},
+ {cat:'giay', name:'Giày phát sáng trong tối', why:'Hiệu ứng đèn quay trong tối rất bắt mắt, trẻ con mê.', hook:'Tắt đèn lên xem đôi giày này', tpl:'vs', A:'BẬT ĐÈN', B:'TẮT ĐÈN', flash:'SÁNG RỰC!', gt:'Bé nhà bạn thích màu nào?',
+  shots:['Đôi giày trong phòng sáng','Tắt đèn, bé dậm chân cho giày sáng','Bé chạy quanh phòng'], tip:'Chỉ làm với giày có đèn thật. Quay trong tối cần giữ máy thật chắc.'},
+ {cat:'giay', name:'Dép đi trong nhà: chọn 1', why:'Dép nhiều mẫu ngộ nghĩnh hợp dạng bình chọn.', hook:'Chỉ được chọn 1 đôi dép cho bé', tpl:'vs', A:'CHỌN 1', B:'CHỌN 1', flash:'', gt:'Bạn chọn đôi số mấy?',
+  shots:['Xếp các đôi dép thành hàng','Cận từng đôi','Bé đi thử đôi được chọn'], tip:'Ghi tên ô ở lưới cuối theo hình con vật hoặc màu của từng đôi.'},
+ {cat:'giay', name:'Giày đi mưa, đi biển', why:'Đúng mùa mưa và mùa hè, nhu cầu tăng cao.', hook:'Mùa mưa này bé cần một đôi như vầy', tpl:'khoe',
+  shots:['Bé mang giày nhảy vào vũng nước hoặc bãi cát','Cận giày sau khi lau','Cận đế giày'], tip:'Chỉ nói "không thấm nước" khi shop ghi rõ. Giữ an toàn cho bé khi quay gần nước.'},
+ {cat:'sosinh', name:'Đồ sơ sinh có cần giặt trước?', why:'Mẹ mới hay thắc mắc, video mẹo được lưu và chia sẻ nhiều.', hook:'Đồ sơ sinh mua về có cần giặt không?', tpl:'khoe',
+  shots:['Đồ mới còn nguyên túi','Giặt tay nhẹ nhàng với nước giặt cho bé','Phơi nắng, gấp gọn'], tip:'Chỉ chia sẻ mẹo chung, không đưa lời khuyên y tế.'},
+ {cat:'sosinh', name:'Đồ đi sinh mùa hè vs mùa đông', why:'Mẹ bầu sinh mùa nào cũng cần biết chuẩn bị gì.', hook:'Sinh mùa hè hay mùa đông thì chuẩn bị khác gì?', tpl:'vs', A:'MÙA HÈ', B:'MÙA ĐÔNG', flash:'', gt:'Bé nhà bạn sinh mùa nào?', grid:'Mùa hè, Mùa đông',
+  shots:['Các món cho mùa hè: đồ cotton mỏng, khăn xô','Các món cho mùa đông: đồ dày, mũ, bao tay chân','Hai giỏ đặt cạnh nhau'], tip:'Ghi tên từng món vào ô chữ.'},
+ {cat:'sosinh', name:'Size đồ sơ sinh theo tháng', why:'Mẹ hay mua sai size vì bé lớn nhanh, video này rất hữu ích.', hook:'Bé mấy tháng mặc size nào?', tpl:'set', setLabel:'SIZE',
+  shots:['Xếp các size từ nhỏ đến lớn','Ghi số tháng tương ứng theo bảng của shop','Đặt cạnh nhau để thấy chênh lệch'], tip:'Dùng đúng bảng size shop công bố.'},
+ {cat:'mebim', name:'Món đồ giúp mẹ rảnh tay', why:'Đồ tiện ích cho mẹ (địu, gối, bình giữ nhiệt…) bán tốt khi thấy rõ công dụng.', hook:'Món đồ giúp mẹ bỉm rảnh cả hai tay', tpl:'khoe',
+  shots:['Mẹ bận tay vừa bế con vừa làm việc','Dùng sản phẩm','Mẹ rảnh tay làm việc khác'], tip:'Với địu, ghế cho bé: quay đúng cách dùng an toàn theo hướng dẫn của shop.'},
+ {cat:'mebim', name:'Trước và sau khi có món này', why:'So sánh trước sau cho thấy rõ lợi ích, dễ thuyết phục.', hook:'Trước và sau khi mẹ có món này', tpl:'vs', A:'TRƯỚC', B:'SAU', flash:'ĐỠ HẲN!', gt:'Bạn có cần món này không?', grid:'Trước, Sau',
+  shots:['Cảnh lộn xộn hoặc vất vả khi chưa có sản phẩm','Cảnh gọn gàng, nhẹ nhàng khi đã dùng'], tip:'Diễn tả thật, không phóng đại.'},
+ {cat:'mebim', name:'Mẹ bỉm vẫn xinh', why:'Mẹ sau sinh muốn mặc đẹp, video phối đồ được xem nhiều.', hook:'Sau sinh vẫn mặc xinh với 3 set này', tpl:'set', setLabel:'SET',
+  shots:['Mẹ mặc từng set, quay toàn thân','Bế con đi dạo','Cận chất vải, độ co giãn'], tip:'Không muốn lộ mặt thì quay từ cổ trở xuống.'},
+ {cat:'mebim', name:'Mẹ bỉm review thật lòng', why:'Nói thật cả ưu và nhược điểm làm khách tin hơn hẳn.', hook:'Mình đã dùng 1 tháng, nói thật về món này', tpl:'khoe',
+  shots:['Cầm sản phẩm, nói cảm nhận','Quay cảnh dùng hằng ngày','Ghi 3 điểm thích và 1 điểm chưa thích vào ô chữ'], tip:'Dùng tính năng chuyển văn bản thành giọng nói của CapCut nếu ngại nói.'},
 ];
 let ideaCat = 'all';
 IDEAS.forEach((it, i) => { const o = document.createElement('option'); o.value = i; o.textContent = it.name + ' (' + CATS[it.cat] + ')'; $('aIdea').appendChild(o); });
