@@ -259,6 +259,24 @@ h3{margin:0;font-size:15px}
             <select id="fSecs"><option>1</option><option>1.5</option><option selected>2.5</option><option>3</option><option>4</option></select>
           </label>
         </div>
+        <div class="vsbox" id="voiceBox">
+          <label class="toggle"><input type="checkbox" id="fVoice"><span><b>Lồng giọng đọc AI vào video</b> (miễn phí, dùng máy chủ của công cụ dịch video). Giọng đọc lời thoại từng cảnh, lấy từ AI soạn kịch bản hoặc chữ trên mỗi cảnh.</span></label>
+          <div id="voiceFields" hidden style="display:flex;flex-direction:column;gap:10px">
+            <div class="row">
+              <label class="f">Giọng đọc<select id="vVoice"></select></label>
+              <label class="f">Tốc độ<select id="vSpeed"><option value="0.9">Chậm</option><option value="1" selected>Bình thường</option><option value="1.1">Hơi nhanh</option><option value="1.2">Nhanh</option></select></label>
+            </div>
+            <div class="row">
+              <label class="f">Link máy chủ<input type="text" id="vServer" placeholder="https://...hf.space" autocomplete="off"></label>
+              <label class="f">Mật khẩu máy chủ<input type="password" id="vPass" autocomplete="current-password"></label>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <button class="btn sm" id="btnVoiceTest" style="padding:7px 12px">Kết nối và nghe thử</button>
+              <span class="hint" id="voiceStatus">Link và mật khẩu chỉ lưu trên máy này.</span>
+            </div>
+            <p class="hint">Chỉ chạy trên link GitHub (hanhnth2.github.io). Máy chủ miễn phí có thể đang ngủ, lần đầu chờ 1–2 phút.</p>
+          </div>
+        </div>
         <label class="f">Nhạc nền (mp3, m4a…). Tiếng gốc của clip sẽ được tắt
           <input type="file" id="inMusic" accept="audio/*">
         </label>
@@ -761,11 +779,12 @@ let perf = [];
 function play(){
   const {total} = segments(); if(cur >= total - 0.05) cur = 0;
   playing = true; live = true; pauseAllVideos(); t0 = performance.now() - cur*1000; $('btnPlay').textContent = '❚❚'; $('btnPlay').setAttribute('aria-label','Tạm dừng');
-  if(S.music){ audio = new Audio(S.music.url); audio.currentTime = cur; audio.play().catch(()=>{}); }
+  if(S.music){ audio = new Audio(S.music.url); audio.currentTime = cur; audio.volume = S.voiceOn ? 0.3 : 1; audio.play().catch(()=>{}); }
+  if(S.voiceOn) previewVoices(cur);
   raf = requestAnimationFrame(tick);
 }
-function stop(){ playing = false; live = false; pauseAllVideos(); cancelAnimationFrame(raf); $('btnPlay').textContent = '▶'; $('btnPlay').setAttribute('aria-label','Phát'); if(audio){ audio.pause(); audio = null; } }
-$('btnPlay').addEventListener('click', () => playing ? stop() : play());
+function stop(){ playing = false; live = false; pauseAllVideos(); cancelAnimationFrame(raf); $('btnPlay').textContent = '▶'; $('btnPlay').setAttribute('aria-label','Phát'); if(audio){ audio.pause(); audio = null; } if(pctx){ pctx.close().catch(()=>{}); pctx = null; } }
+$('btnPlay').addEventListener('click', async () => { if(playing){ stop(); return; } if(S.voiceOn){ $('btnPlay').disabled = true; const ok = await ensureVoices(); $('btnPlay').disabled = false; if(!ok) return; } play(); });
 $('scrub').addEventListener('input', e => { stop(); const {total} = segments(); cur = e.target.value/1000*total; render(cur); fmt(); });
 
 /* ---------- Xuất video ---------- */
@@ -781,18 +800,28 @@ $('btnExport').addEventListener('click', async () => {
   const {total} = segments();
   const btn = $('btnExport'); btn.disabled = true; $('btnPlay').disabled = true; $('result').hidden = true; $('bar').hidden = false;
   const vStream = cv.captureStream(FPS); const tracks = [...vStream.getVideoTracks()];
-  let actx = null, el = null, gain = null;
-  if(S.music){
-    try{ actx = new (window.AudioContext || window.webkitAudioContext)(); el = new Audio(S.music.url); el.crossOrigin = 'anonymous';
-      const src = actx.createMediaElementSource(el); gain = actx.createGain(); const dest = actx.createMediaStreamDestination();
-      src.connect(gain).connect(dest); tracks.push(...dest.stream.getAudioTracks()); await actx.resume(); }
-    catch(e){ setStatus('Không gắn được nhạc, video sẽ không có tiếng.'); }
+  let actx = null, el = null, gain = null, dest = null, vbufs = null;
+  if(S.voiceOn){
+    vbufs = await ensureVoices();
+    if(!vbufs){ btn.disabled = false; $('btnPlay').disabled = false; $('bar').hidden = true; vStream.getTracks().forEach(t => t.stop()); return; }
+  }
+  if(S.music || vbufs){
+    try{ actx = new (window.AudioContext || window.webkitAudioContext)(); dest = actx.createMediaStreamDestination();
+      tracks.push(...dest.stream.getAudioTracks()); await actx.resume(); }
+    catch(e){ actx = null; setStatus('Không gắn được âm thanh, video sẽ không có tiếng.'); }
+  }
+  if(actx && S.music){
+    try{ el = new Audio(S.music.url); el.crossOrigin = 'anonymous';
+      const src = actx.createMediaElementSource(el); gain = actx.createGain(); src.connect(gain).connect(dest); }
+    catch(e){ el = null; setStatus('Không gắn được nhạc.'); }
   }
   const rec = new MediaRecorder(new MediaStream(tracks), mime ? {mimeType:mime, videoBitsPerSecond:12_000_000} : {videoBitsPerSecond:12_000_000});
   const chunks = []; rec.ondataavailable = e => { if(e.data.size) chunks.push(e.data); };
   const done = new Promise(r => rec.onstop = r);
   pauseAllVideos(); live = true; exporting = true; render(0); rec.start(250);
-  if(el){ el.currentTime = 0; el.play().catch(()=>{}); gain.gain.setValueAtTime(1, actx.currentTime); gain.gain.setValueAtTime(1, actx.currentTime + Math.max(0,total-1.5)); gain.gain.linearRampToValueAtTime(0, actx.currentTime + total); }
+  if(actx && vbufs) scheduleVoices(actx, dest, vbufs, actx.currentTime + 0.05, 0);
+  const mv = vbufs ? 0.3 : 1;
+  if(el){ el.currentTime = 0; el.play().catch(()=>{}); gain.gain.setValueAtTime(mv, actx.currentTime); gain.gain.setValueAtTime(mv, actx.currentTime + Math.max(0,total-1.5)); gain.gain.linearRampToValueAtTime(0, actx.currentTime + total); }
   const start = performance.now();
   setStatus('Đang xuất video… giữ nguyên tab này đến khi xong.');
   await new Promise(resolve => {
@@ -1124,6 +1153,85 @@ $('btnSrt').addEventListener('click', async () => {
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([srt], {type:'text/plain'})); a.download = 'phu-de-capcut.srt'; document.body.appendChild(a); a.click(); a.remove();
     setStatus('Đã tải phu-de-capcut.srt. Mở CapCut trên máy tính → Phụ đề → Nhập phụ đề.');
   }
+});
+
+
+/* ---------- Giọng đọc AI (máy chủ Video chuyển đổi Tiếng Việt) ---------- */
+const VOICES = [
+ ['edge:hoaimy','Hoài My – Nữ, chuẩn, rõ ràng'],['edge:namminh','Nam Minh – Nam, chuẩn, rõ ràng'],
+ ['edge:nu-tre','Cô gái trẻ trung – Nữ, vui tươi'],['edge:nu-diu','Chị dịu dàng – Nữ, chậm, ấm'],
+ ['edge:nu-review','Reviewer nhanh – Nữ, năng động'],['edge:be-gai','Bé gái – Giọng trẻ em'],
+ ['edge:nam-tram','Anh trầm ấm – Nam, kể chuyện'],['edge:nam-nangdong','Chàng trai năng động – Nam, sôi nổi'],
+ ['edge:nam-mc','MC quảng cáo – Nam, dứt khoát'],['edge:ong-lao','Ông kể chuyện – Nam, rất trầm'],
+];
+const vcache = new Map(); let pctx = null; let decCtx = null;
+function fillVoices(list){ const cur = $('vVoice').value; $('vVoice').innerHTML = '';
+  list.forEach(([id, name]) => { const o = document.createElement('option'); o.value = id; o.textContent = name; $('vVoice').appendChild(o); });
+  if(cur && list.some(v => v[0] === cur)) $('vVoice').value = cur; else $('vVoice').value = 'edge:nu-review'; }
+fillVoices(VOICES);
+function lsGet(k){ try{ return localStorage.getItem(k) || ''; }catch(e){ return ''; } }
+function lsSet(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+$('vServer').value = lsGet('vv_server') || 'https://hanhnth2-video-tieng-viet.hf.space';
+$('vPass').value = lsGet('vv_pass');
+if(lsGet('vv_voice')) $('vVoice').value = lsGet('vv_voice');
+S.voiceOn = false;
+$('fVoice').addEventListener('change', e => { S.voiceOn = e.target.checked; $('voiceFields').hidden = !S.voiceOn; });
+$('vServer').addEventListener('change', () => lsSet('vv_server', $('vServer').value.trim()));
+$('vPass').addEventListener('change', () => lsSet('vv_pass', $('vPass').value));
+$('vVoice').addEventListener('change', () => lsSet('vv_voice', $('vVoice').value));
+const vserver = () => $('vServer').value.trim().replace(/\/+$/, '');
+function vStatus(t){ $('voiceStatus').textContent = t; }
+async function ttsFetch(text){
+  const voice = $('vVoice').value, speed = +$('vSpeed').value, key = voice + '|' + speed + '|' + text;
+  if(vcache.has(key)) return vcache.get(key);
+  const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), 120000);
+  let res;
+  try{ res = await fetch(vserver() + '/api/tts', {method:'POST', signal:ctl.signal, headers:{'Content-Type':'application/json','X-App-Password':$('vPass').value}, body:JSON.stringify({text, voice, speed})}); }
+  catch(e){ throw new Error('Không kết nối được máy chủ. Máy chủ có thể đang ngủ: đợi 1–2 phút rồi thử lại. Kiểm tra link máy chủ, và nhớ dùng link GitHub, không dùng link claude.ai.'); }
+  finally{ clearTimeout(timer); }
+  if(res.status === 401) throw new Error('Sai mật khẩu máy chủ.');
+  if(!res.ok) throw new Error('Máy chủ báo lỗi (' + res.status + '). Có thể máy chủ chưa được cập nhật bản mới có giọng đọc.');
+  decCtx = decCtx || new (window.AudioContext || window.webkitAudioContext)();
+  const buf = await decCtx.decodeAudioData(await res.arrayBuffer());
+  vcache.set(key, buf); return buf;
+}
+async function ensureVoices(){
+  const lines = voLines();
+  if(!lines.length){ setStatus('Chưa có lời thoại để đọc. Hãy điền chữ cho từng cảnh hoặc dùng AI soạn kịch bản.'); return null; }
+  if(!vserver()){ setStatus('Hãy nhập link máy chủ ở phần Giọng đọc AI.'); return null; }
+  const out = [];
+  try{
+    for(let i = 0; i < lines.length; i++){ setStatus(`Đang tạo giọng đọc ${i+1}/${lines.length}…`); out.push({...lines[i], buf: await ttsFetch(lines[i].text)}); }
+  } catch(e){ setStatus(e.message); vStatus(e.message); return null; }
+  setStatus('Đã có giọng đọc cho ' + out.length + ' câu.'); return out;
+}
+function scheduleVoices(ctx, dst, items, base, from){
+  items.forEach(it => {
+    if(it.start < from - 0.05) return;
+    const room = Math.max(0.6, it.end - it.start - 0.15), src = ctx.createBufferSource();
+    src.buffer = it.buf; src.playbackRate.value = it.buf.duration > room ? Math.min(1.35, it.buf.duration / room) : 1;
+    src.connect(dst); src.start(base + (it.start - from) + 0.08);
+  });
+}
+async function previewVoices(from){
+  const lines = voLines(); const items = [];
+  for(const l of lines){ const key = $('vVoice').value + '|' + (+$('vSpeed').value) + '|' + l.text; if(vcache.has(key)) items.push({...l, buf: vcache.get(key)}); }
+  if(!items.length) return;
+  pctx = new (window.AudioContext || window.webkitAudioContext)(); await pctx.resume().catch(()=>{});
+  scheduleVoices(pctx, pctx.destination, items, pctx.currentTime, from);
+}
+$('btnVoiceTest').addEventListener('click', async () => {
+  lsSet('vv_server', vserver()); lsSet('vv_pass', $('vPass').value);
+  vStatus('Đang kết nối… (máy chủ đang ngủ thì chờ 1–2 phút)'); $('btnVoiceTest').disabled = true;
+  try{
+    try{ const r = await fetch(vserver() + '/api/voices', {headers:{'X-App-Password':$('vPass').value}});
+      if(r.ok){ const list = await r.json(); if(Array.isArray(list) && list.length) fillVoices(list.filter(v => !String(v.id).startsWith('gtts')).map(v => [v.id, v.name + ' – ' + v.desc])); } }catch(e){}
+    const buf = await ttsFetch('Xin chào các mẹ, hôm nay mình giới thiệu một món siêu xinh cho bé nhé!');
+    const c = new (window.AudioContext || window.webkitAudioContext)(); await c.resume().catch(()=>{});
+    const src = c.createBufferSource(); src.buffer = buf; src.connect(c.destination); src.start(); src.onended = () => c.close();
+    vStatus('Đã kết nối. Đang phát giọng mẫu.');
+  } catch(e){ vStatus(e.message); }
+  $('btnVoiceTest').disabled = false;
 });
 
 /* ---------- Khởi động ---------- */
