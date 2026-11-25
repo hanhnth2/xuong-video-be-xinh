@@ -84,6 +84,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
 .status{font-size:13px;color:var(--muted);margin:0;min-height:1.5em}
 .result{display:flex;flex-direction:column;gap:10px}
+.vo{background:var(--surface-2);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;font-size:14px}
 .result video{width:100%;border-radius:12px;background:#000;max-height:360px}
 .note{background:var(--warn-bg);color:var(--warn-fg);border-radius:10px;padding:10px 12px;font-size:13px}
 .guide{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
@@ -289,6 +290,14 @@ h3{margin:0;font-size:15px}
       <div class="result" id="result" hidden>
         <video id="outVideo" controls playsinline></video>
         <button class="btn primary" id="btnSave">Lưu video về máy</button>
+        <div class="vo">
+          <b>Thêm giọng đọc miễn phí bằng CapCut</b>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn sm" id="btnVoCopy" style="padding:7px 10px">Chép lời thoại</button>
+            <button class="btn sm" id="btnSrt" style="padding:7px 10px">Tải phụ đề khớp cảnh (.srt)</button>
+          </div>
+          <p class="hint"><b>Trên điện thoại:</b> mở CapCut, thêm video, bấm Văn bản → dán lời thoại → Chuyển văn bản thành giọng nói → chọn giọng tiếng Việt. <b>Trên máy tính:</b> CapCut → Phụ đề → Nhập phụ đề (file .srt), chọn tất cả phụ đề rồi bấm Chuyển văn bản thành giọng nói. Lời thoại sẽ khớp đúng từng cảnh.</p>
+        </div>
       </div>
     </aside>
   </div>
@@ -893,6 +902,7 @@ function renderScript(d){
     if(d.cta) $('fCta').value = d.cta;
     if(val('aPrice')) $('fPrice').value = val('aPrice');
     S.scriptCaps = scenes.map(c => c.chuTrenVideo || '');
+    S.scriptVO = scenes.map(c => c.loiThoai || '');
     S.photos.forEach((p, i) => { if(!p.sample && S.scriptCaps[i]) p.caption = S.scriptCaps[i]; });
     if(S.photos.every(p => p.sample)) S.photos.forEach((p, i) => { if(S.scriptCaps[i]) p.caption = S.scriptCaps[i]; });
     if(AI.files[0] && !S.product){ loadFile(new File([AI.files[0].blob], 'sp.jpg', {type:'image/jpeg'})).then(({img}) => {
@@ -1081,6 +1091,39 @@ MOTIONS.forEach(([name, text]) => {
   row.innerHTML = `<div class="prompt"><b>${esc(name)}</b>${esc(text)}</div><button class="btn sm">Chép</button>`;
   row.querySelector('button').addEventListener('click', e => copyText(text, e.currentTarget));
   $('motionList').appendChild(row);
+});
+
+
+/* ---------- Lời thoại & phụ đề cho CapCut ---------- */
+function voLines(){
+  const {segs} = segments(); let n = 0; const out = [];
+  segs.forEach(seg => {
+    let text = '';
+    if(seg.type === 'intro') text = val('fHook');
+    else if(seg.type === 'photo'){ const p = S.photos[seg.idx]; text = (S.scriptVO && S.scriptVO[n]) || (p.caption || '').split(/\s*\|\s*|\s+\/\s+/).filter(Boolean).join('. '); n++; }
+    else if(seg.type === 'outro') text = [val('fName'), val('fCta')].filter(Boolean).join('. ');
+    else if(seg.type === 'grid') text = [val('fGridTitle'), val('fCta')].filter(Boolean).join('. ');
+    if(text) out.push({start:seg.start, end:seg.start + seg.dur, text});
+  });
+  return out;
+}
+function srtTime(t){ const ms = Math.round(t*1000), h = Math.floor(ms/3600000), m = Math.floor(ms/60000)%60, sec = Math.floor(ms/1000)%60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')},${String(ms%1000).padStart(3,'0')}`; }
+$('btnVoCopy').addEventListener('click', e => {
+  const lines = voLines(); if(!lines.length){ setStatus('Chưa có lời thoại. Hãy điền chữ cho từng cảnh hoặc dùng AI soạn kịch bản.'); return; }
+  copyText(lines.map(l => l.text).join('\n'), e.currentTarget);
+});
+$('btnSrt').addEventListener('click', async () => {
+  const lines = voLines(); if(!lines.length){ setStatus('Chưa có lời thoại. Hãy điền chữ cho từng cảnh hoặc dùng AI soạn kịch bản.'); return; }
+  const srt = lines.map((l, i) => `${i+1}\n${srtTime(l.start)} --> ${srtTime(l.end)}\n${l.text}\n`).join('\n');
+  let dl = null; try{ dl = await window.claude?.use?.('downloads'); }catch(e){}
+  if(dl){
+    try{ await dl.save({filename:'phu-de-capcut.txt', data:srt}); setStatus('Đã lưu phu-de-capcut.txt. Đổi đuôi .txt thành .srt rồi nhập vào CapCut trên máy tính.'); }
+    catch(e){ if(e?.code !== 'declined') setStatus('Không lưu được ở đây. Hãy dùng nút Chép lời thoại.'); }
+  } else {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([srt], {type:'text/plain'})); a.download = 'phu-de-capcut.srt'; document.body.appendChild(a); a.click(); a.remove();
+    setStatus('Đã tải phu-de-capcut.srt. Mở CapCut trên máy tính → Phụ đề → Nhập phụ đề.');
+  }
 });
 
 /* ---------- Khởi động ---------- */
